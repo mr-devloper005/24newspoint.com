@@ -202,7 +202,7 @@ function MediaCampaignDetail({ post, related, comments }: { post: SitePost; rela
           <EditableComments slug={post.slug} comments={comments} />
         </article>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 max-w-full space-y-5 overflow-hidden">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--slot4-accent)]">Brand profile</p>
             <h2 className="mt-3 text-2xl font-black">{brand}</h2>
@@ -491,10 +491,11 @@ function BadgeLine({ label, value }: { label: string; value: string }) {
 
 function RelatedPanel({ task, post, related, compact = false }: { task: TaskKey; post: SitePost; related: SitePost[]; compact?: boolean }) {
   const taskConfig = getTaskConfig(task)
+  const heading = task === 'mediaDistribution' ? 'Related campaigns' : 'More like this'
   return (
-    <aside className="min-w-0 max-w-full space-y-5 overflow-hidden">
+    <aside className="w-full min-w-0 max-w-full space-y-5 overflow-hidden">
       {!compact ? (
-        <div className="max-w-full overflow-hidden border-b border-black/20 bg-white p-5">
+        <div className="w-full max-w-full overflow-hidden border-b border-black/20 bg-white p-5">
           <p className="text-xs font-black uppercase tracking-[0.22em] opacity-55">About this post</p>
           <div className="mt-4 grid gap-3 text-sm font-bold opacity-75">
             <p className="inline-flex items-center gap-2"><Tag className="h-4 w-4" /> Task: {taskConfig?.label || task}</p>
@@ -504,12 +505,12 @@ function RelatedPanel({ task, post, related, compact = false }: { task: TaskKey;
         </div>
       ) : null}
       {related.length ? (
-        <div className="border-b border-black/20 bg-white p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-black tracking-[-0.04em]">More like this</h2>
-            <Link href={taskConfig?.route || '/'} className="text-xs font-black uppercase tracking-[0.16em] opacity-55">View all</Link>
+        <div className="w-full max-w-full overflow-hidden border-b border-black/20 bg-white p-5">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <h2 className="min-w-0 truncate text-lg font-black tracking-[-0.04em]">{heading}</h2>
+            <Link href={taskConfig?.route || '/'} className="shrink-0 text-xs font-black uppercase tracking-[0.16em] opacity-55">View all</Link>
           </div>
-          <div className="mt-5 grid max-w-full gap-3 overflow-hidden">
+          <div className="mt-5 grid w-full max-w-full gap-3 overflow-hidden">
             {related.map((item) => <RelatedCard key={item.id || item.slug} task={task} post={item} />)}
           </div>
         </div>
@@ -520,12 +521,14 @@ function RelatedPanel({ task, post, related, compact = false }: { task: TaskKey;
 
 function RelatedCard({ task, post }: { task: TaskKey; post: SitePost }) {
   const image = getImages(post)[0]
+  const title = stripHtmlText(post.title)
+  const summary = summaryText(post)
   return (
-    <Link href={buildPostUrl(task, post.slug)} className="group grid max-w-full grid-cols-[72px_minmax(0,1fr)] gap-3 border-t border-black/15 py-3 transition hover:text-[#c92f2f]">
-      {image && task !== 'sbm' ? <img src={image} alt="" className="h-[72px] w-[72px] object-cover" /> : <div className="flex h-[72px] w-[72px] items-center justify-center bg-black text-white"><FileText className="h-6 w-6" /></div>}
+    <Link href={buildPostUrl(task, post.slug)} className="group grid w-full min-w-0 max-w-full grid-cols-[64px_minmax(0,1fr)] gap-3 overflow-hidden border-t border-black/15 py-3 transition hover:text-[#c92f2f]">
+      {image && task !== 'sbm' ? <img src={image} alt="" className="h-16 w-16 shrink-0 object-cover" /> : <div className="flex h-16 w-16 shrink-0 items-center justify-center bg-black text-white"><FileText className="h-6 w-6" /></div>}
       <div className="min-w-0 max-w-full overflow-hidden">
-        <h3 className="line-clamp-2 max-w-full break-words text-sm font-black leading-tight tracking-[-0.03em]">{post.title}</h3>
-        <p className="mt-2 line-clamp-2 max-w-full break-words text-xs leading-5 opacity-60">{summaryText(post)}</p>
+        <h3 className="line-clamp-2 min-w-0 max-w-full whitespace-normal break-words text-sm font-black leading-tight tracking-[-0.03em] [overflow-wrap:anywhere]">{title}</h3>
+        {summary ? <p className="mt-2 line-clamp-2 min-w-0 max-w-full whitespace-normal break-words text-xs leading-5 opacity-60 [overflow-wrap:anywhere]">{summary}</p> : null}
       </div>
     </Link>
   )
