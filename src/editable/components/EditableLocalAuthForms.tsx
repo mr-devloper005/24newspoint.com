@@ -31,8 +31,9 @@ const saveSession = (user: Pick<LocalUser, 'name' | 'email'>) => {
   window.dispatchEvent(new Event('slot4-auth-change'))
 }
 
-const inputClass = 'h-[3.25rem] border border-black bg-white px-4 text-base font-bold text-black outline-none transition placeholder:text-black/35 focus:border-[#c92f2f]'
-const buttonClass = 'inline-flex h-[3.25rem] items-center justify-center border border-black bg-black px-6 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-[#c92f2f] disabled:opacity-60'
+const inputClass = 'h-[3.25rem] rounded-md border border-slate-300 bg-white px-4 text-base font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[var(--slot4-accent)] focus:ring-4 focus:ring-[var(--slot4-accent)]/10'
+const buttonClass = 'inline-flex h-[3.25rem] items-center justify-center rounded-md border border-slate-950 bg-slate-950 px-6 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:-translate-y-0.5 hover:bg-[var(--slot4-accent)] disabled:opacity-60'
+const labelClass = 'grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-600'
 
 export function EditableLocalLoginForm() {
   const router = useRouter()
@@ -58,8 +59,8 @@ export function EditableLocalLoginForm() {
 
   return (
     <form className="mt-6 grid gap-4" onSubmit={submit}>
-      <input className={inputClass} type="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
-      <input className={inputClass} type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+      <label className={labelClass}>Email address<input className={inputClass} type="email" placeholder="you@company.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+      <label className={labelClass}>Password<input className={inputClass} type="password" placeholder="Enter your password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       {message ? <p className={`border px-4 py-3 text-sm font-bold ${status === 'success' ? 'border-emerald-800 bg-emerald-50 text-emerald-800' : 'border-red-700 bg-red-50 text-red-700'}`}>{message}</p> : null}
       <button type="submit" className={buttonClass}>{pagesContent.auth.login.submitLabel}</button>
     </form>
@@ -99,9 +100,9 @@ export function EditableLocalSignupForm() {
 
   return (
     <form className="mt-6 grid gap-4" onSubmit={submit}>
-      <input className={inputClass} placeholder="Full name" value={name} onChange={(event) => setName(event.target.value)} required />
-      <input className={inputClass} type="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
-      <input className={inputClass} type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+      <label className={labelClass}>Full name<input className={inputClass} placeholder="Your name" value={name} onChange={(event) => setName(event.target.value)} required /></label>
+      <label className={labelClass}>Work email<input className={inputClass} type="email" placeholder="you@company.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+      <label className={labelClass}>Password<input className={inputClass} type="password" placeholder="Use at least 4 characters" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       {message ? <p className={`border px-4 py-3 text-sm font-bold ${status === 'success' ? 'border-emerald-800 bg-emerald-50 text-emerald-800' : 'border-red-700 bg-red-50 text-red-700'}`}>{message}</p> : null}
       <button type="submit" className={buttonClass}>{pagesContent.auth.signup.submitLabel}</button>
     </form>
