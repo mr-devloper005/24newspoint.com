@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Clock3 } from 'lucide-react'
+import { ArrowRight, BarChart3, RadioTower, Send } from 'lucide-react'
 import type { SitePost } from '@/lib/site-connector'
 import type { TaskKey } from '@/lib/site-config'
 import { editableDesignContract as dc, editablePalette as pal } from '@/editable/layouts/design-contract'
@@ -33,6 +33,15 @@ export function getEditableCategory(post?: SitePost | null) {
   return (typeof content.category === 'string' && content.category) || post?.tags?.[0] || 'Latest'
 }
 
+function metricFor(post: SitePost, seed = 1) {
+  const base = (post.title?.length || 28) + seed * 17
+  return {
+    reach: `${Math.max(18, base % 92)}K`,
+    pickups: `${Math.max(7, base % 34)} outlets`,
+    status: seed % 3 === 0 ? 'Syndicating' : seed % 2 === 0 ? 'Published' : 'Ready',
+  }
+}
+
 export function postHref(task: TaskKey, post: SitePost, route = `/${task}`) {
   return `${route}/${post.slug}`
 }
@@ -54,16 +63,22 @@ export function EditorialFeatureCard({ post, href, label = 'Cover story' }: { po
 }
 
 export function RailPostCard({ post, href, index }: { post: SitePost; href: string; index: number }) {
+  const metric = metricFor(post, index + 1)
   return (
-    <Link href={href} className={`group ${dc.layout.minRailCard} block border-t-4 border-black bg-[var(--slot4-surface-bg)] ${dc.motion.lift}`}>
+    <Link href={href} className={`group ${dc.layout.minRailCard} block overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${dc.motion.lift}`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-[var(--slot4-media-bg)]">
         <img src={getEditablePostImage(post)} alt={post.title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        <span className="absolute left-3 top-3 rounded-md bg-white/95 px-3 py-1 text-[10px] font-black uppercase tracking-[.14em] text-slate-900">{metric.status}</span>
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[.18em] text-[var(--slot4-accent)]">
           <span>{getEditableCategory(post)}</span><span>{String(index + 1).padStart(2, '0')}</span>
         </div>
         <h3 className="mt-3 line-clamp-3 text-xl font-black leading-[1.02] tracking-[-.04em]">{post.title}</h3>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-[11px] font-black text-slate-600">
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-2"><RadioTower className="h-3.5 w-3.5 text-[var(--slot4-accent)]" /> {metric.reach}</span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-2"><BarChart3 className="h-3.5 w-3.5 text-[var(--slot4-accent)]" /> {metric.pickups}</span>
+        </div>
       </div>
     </Link>
   )
@@ -74,7 +89,7 @@ export function CompactIndexCard({ post, href, index }: { post: SitePost; href: 
     <Link href={href} className="group grid min-w-0 grid-cols-[46px_1fr] gap-4 border-t border-black/20 py-5 first:border-t-0">
       <span className="text-3xl font-black leading-none text-[var(--slot4-accent)]">{String(index + 1).padStart(2, '0')}</span>
       <div className="min-w-0">
-        <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-black/50"><Clock3 className="h-3 w-3" /> {getEditableCategory(post)}</p>
+        <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-slate-500"><Send className="h-3 w-3" /> {getEditableCategory(post)}</p>
         <h3 className="mt-2 line-clamp-3 text-lg font-black leading-tight tracking-[-.03em] group-hover:text-[var(--slot4-accent)]">{post.title}</h3>
       </div>
     </Link>
