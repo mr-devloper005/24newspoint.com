@@ -34,7 +34,7 @@ export function EditableContactLeadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 border-t border-slate-200 bg-white pt-7">
+    <form onSubmit={handleSubmit} className="mt-8 border-t border-[var(--editable-border)] bg-white pt-7">
       <div className="grid gap-4 md:grid-cols-2">
         <Field name="name" label="Full name" placeholder="Your name" required />
         <Field name="email" type="email" label="Email address" placeholder="you@company.com" required />
@@ -54,7 +54,7 @@ export function EditableContactLeadForm() {
           <span>{message}</span>
         </div>
       ) : null}
-      <button type="submit" disabled={status === 'submitting'} className="mt-6 inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-md border border-slate-950 bg-slate-950 px-6 text-xs font-black uppercase tracking-[0.24em] text-white transition hover:-translate-y-0.5 hover:bg-[var(--slot4-accent)] disabled:cursor-not-allowed disabled:opacity-70">
+      <button type="submit" disabled={status === 'submitting'} className="mt-6 inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-[image:var(--slot4-accent-grad)] px-6 text-sm font-bold text-white shadow-[0_14px_30px_rgba(91,99,245,0.35)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70">
         {status === 'submitting' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Send message
       </button>

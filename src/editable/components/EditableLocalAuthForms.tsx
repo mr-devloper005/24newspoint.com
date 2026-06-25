@@ -31,9 +31,9 @@ const saveSession = (user: Pick<LocalUser, 'name' | 'email'>) => {
   window.dispatchEvent(new Event('slot4-auth-change'))
 }
 
-const inputClass = 'h-[3.25rem] rounded-md border border-slate-300 bg-white px-4 text-base font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[var(--slot4-accent)] focus:ring-4 focus:ring-[var(--slot4-accent)]/10'
-const buttonClass = 'inline-flex h-[3.25rem] items-center justify-center rounded-md border border-slate-950 bg-slate-950 px-6 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:-translate-y-0.5 hover:bg-[var(--slot4-accent)] disabled:opacity-60'
-const labelClass = 'grid gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-600'
+const inputClass = 'h-[3.25rem] rounded-2xl border border-[var(--editable-border)] bg-white px-4 text-base font-semibold text-[var(--slot4-dark-bg)] outline-none transition placeholder:text-slate-400 focus:border-[var(--slot4-accent)] focus:ring-4 focus:ring-[var(--slot4-accent)]/10'
+const buttonClass = 'inline-flex h-[3.25rem] items-center justify-center rounded-full bg-[image:var(--slot4-accent-grad)] px-6 text-sm font-bold text-white shadow-[0_14px_30px_rgba(91,99,245,0.35)] transition hover:-translate-y-0.5 disabled:opacity-60'
+const labelClass = 'grid gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--slot4-muted-text)]'
 
 export function EditableLocalLoginForm() {
   const router = useRouter()
