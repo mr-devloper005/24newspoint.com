@@ -12,6 +12,7 @@ import { taskPageMetadata } from '@/config/site.content'
 import { taskPageVoices } from '@/editable/content/task-pages.content'
 import { EditableSiteShell } from '@/editable/shell/EditableSiteShell'
 import { getVisualPreset, visualSystem } from '@/editable/theme/visual-system'
+import { ReadingProgress, Reveal } from '@/editable/components/Motion'
 
 export const revalidate = 3
 
@@ -81,29 +82,51 @@ export async function EditableTaskArchiveRoute({
   const category = resolved.category ? normalizeCategory(resolved.category) : 'all'
   const taskConfig = getTaskConfig(task)
   const { posts, pagination } = await fetchPaginatedTaskPosts(task, { page, limit: 24, category })
-  const fallback = posts.length ? { posts, pagination } : await fetchEditableArchiveFallback(task, { page, limit: 24, category })
-  return <TaskArchiveView task={task} posts={fallback.posts} pagination={fallback.pagination || pagination} category={category} basePath={basePath || taskConfig?.route || `/${task}`} />
+  // Always merge in a robust live fallback so genuine posts surface even when the task-scoped
+  // endpoint over-filters (unknown categories, missing type metadata, etc.). Mock data is only
+  // ever used as a last resort when nothing is available from the live feed.
+  const fallback = await fetchEditableArchiveFallback(task, { page, limit: 24, category, seed: posts })
+  return (
+    <TaskArchiveView
+      task={task}
+      posts={fallback.posts}
+      pagination={fallback.posts.length >= posts.length ? fallback.pagination : pagination}
+      category={category}
+      basePath={basePath || taskConfig?.route || `/${task}`}
+    />
+  )
 }
 
-async function fetchEditableArchiveFallback(task: TaskKey, { page, limit, category }: { page: number; limit: number; category: string }) {
+async function fetchEditableArchiveFallback(
+  task: TaskKey,
+  { page, limit, category, seed = [] }: { page: number; limit: number; category: string; seed?: SitePost[] },
+) {
   const start = (page - 1) * limit
-  const mediaAliases = new Set(['mediadistribution', 'media-distribution', 'pressrelease', 'press-release', 'publicrelation', 'public-relation', 'newsagency', 'news-agency', 'onlinemedia', 'online-media', 'medianetwork', 'media-network', 'directorypress', 'directory-press', 'press', 'release', 'news', 'media'])
-  const postType = (post: SitePost) => {
-    const content = post.content && typeof post.content === 'object' ? post.content as Record<string, unknown> : {}
-    const explicit = typeof content.type === 'string' ? content.type : ''
-    const tag = Array.isArray(post.tags) ? post.tags.find((item) => typeof item === 'string' && mediaAliases.has(normalizeCategory(item).replace(/-/g, ''))) : ''
-    return normalizeCategory(explicit || tag || '').replace(/-/g, '')
-  }
   const postCategory = (post: SitePost) => {
     const content = post.content && typeof post.content === 'object' ? post.content as Record<string, unknown> : {}
     return normalizeCategory(typeof content.category === 'string' ? content.category : post.tags?.[0] || '')
   }
+  const postType = (post: SitePost) => {
+    const content = post.content && typeof post.content === 'object' ? post.content as Record<string, unknown> : {}
+    return normalizeCategory(typeof content.type === 'string' ? content.type : '').replace(/-/g, '')
+  }
   const matchesCategory = (post: SitePost) => category === 'all' || postCategory(post) === category
-  const matchesTask = (post: SitePost) => task !== 'mediaDistribution' || !postType(post) || mediaAliases.has(postType(post))
+  // This site distributes a single content type, so the site-scoped feed is already correct.
+  // Accept every live post except explicit comment records to avoid hiding valid distributions.
+  const isPublishable = (post: SitePost) => postType(post) !== 'comment'
 
-  const feed = await fetchSiteFeed<SitePost>(100, { fresh: true, timeoutMs: 4000 }).catch(() => null)
-  const livePosts = (feed?.posts || []).filter((post) => matchesTask(post) && matchesCategory(post))
-  const source = livePosts.length ? livePosts : getMockPostsForTask(task).filter(matchesCategory)
+  const live =
+    (await fetchSiteFeed<SitePost>(200, { fresh: true, timeoutMs: 4500 }).catch(() => null)) ||
+    (await fetchSiteFeed<SitePost>(200, { timeoutMs: 4500 }).catch(() => null))
+
+  const livePosts = (live?.posts || []).filter((post) => isPublishable(post) && matchesCategory(post))
+
+  // Merge the task-scoped seed first (best metadata), then any additional live posts, de-duplicated.
+  const merged = Array.from(
+    new Map([...seed, ...livePosts].map((post) => [post.slug || post.id || post.title, post])).values(),
+  )
+
+  const source = merged.length ? merged : getMockPostsForTask(task).filter(matchesCategory)
   const posts = source.slice(start, start + limit)
   const totalPages = Math.max(1, Math.ceil(source.length / limit))
   return {
@@ -220,31 +243,41 @@ function EditorialArchive({
 }) {
   const page = pagination.page || 1
   const lead = posts[0]
-  const secondary = posts.slice(1, 3)
-  const cardPosts = posts
+  const cardPosts = posts.slice(1)
 
   return (
     <EditableSiteShell>
-      <main className="min-h-screen bg-[var(--slot4-page-bg)] text-slate-950">
-        <section className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-[1120px] flex-col gap-6 px-4 py-12 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-16">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-[var(--slot4-accent)]">Media distribution archive</p>
-              <h1 className="mt-3 text-5xl font-black leading-none sm:text-6xl lg:text-7xl">
-                {category === 'all' ? label : categoryLabel}
-              </h1>
-            </div>
-            <p className="max-w-md border-l-4 border-[var(--slot4-accent)] pl-5 text-sm font-bold leading-7 text-slate-600">
+      <ReadingProgress />
+      <main className="min-h-screen text-[var(--slot4-page-text)]">
+        <section className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(55%_60%_at_50%_0%,rgba(91,99,245,0.14),transparent_70%)]" />
+          <div className="mx-auto max-w-[1160px] px-4 pb-6 pt-14 text-center sm:px-6 lg:px-8 lg:pt-20">
+            <p className="hero-reveal mx-auto inline-flex items-center gap-2 rounded-full border border-[var(--editable-border)] bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--slot4-accent)] shadow-sm backdrop-blur">
+              <Newspaper className="h-3.5 w-3.5" /> Media distribution archive
+            </p>
+            <h1 className="hero-reveal mt-6 text-5xl font-black leading-[1.02] tracking-[-0.04em] text-[var(--slot4-dark-bg)] sm:text-6xl lg:text-7xl" style={{ animationDelay: '.08s' }}>
+              {category === 'all' ? label : categoryLabel}
+            </h1>
+            <p className="hero-reveal mx-auto mt-5 max-w-2xl text-lg leading-8 text-[var(--slot4-muted-text)]" style={{ animationDelay: '.16s' }}>
               Browse live distributions, press releases, publisher-ready announcements, and campaign records organized for fast PR discovery.
             </p>
           </div>
         </section>
 
-        <section className="border-b border-slate-200 bg-slate-950 text-white">
-          <div className="mx-auto flex max-w-[1120px] gap-7 overflow-x-auto px-4 py-4 text-xs font-black uppercase tracking-[0.16em] sm:px-6 lg:px-8">
-            <Link href={basePath} className={category === 'all' ? 'text-[var(--slot4-accent)]' : 'hover:text-[var(--slot4-accent)]'}>Latest</Link>
+        <section className="mx-auto max-w-[1160px] px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center gap-2 rounded-full border border-[var(--editable-border)] bg-white/80 p-2 shadow-[0_10px_30px_rgba(13,23,46,0.06)] backdrop-blur">
+            <Link
+              href={basePath}
+              className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${category === 'all' ? 'bg-[image:var(--slot4-accent-grad)] text-white' : 'text-[var(--slot4-muted-text)] hover:text-[var(--slot4-dark-bg)]'}`}
+            >
+              Latest
+            </Link>
             {categories.slice(0, 8).map((item) => (
-              <Link key={item.slug} href={pageHref(basePath, item.slug, 1)} className={category === item.slug ? 'text-[var(--slot4-accent)]' : 'whitespace-nowrap hover:text-[var(--slot4-accent)]'}>
+              <Link
+                key={item.slug}
+                href={pageHref(basePath, item.slug, 1)}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${category === item.slug ? 'bg-[image:var(--slot4-accent-grad)] text-white' : 'text-[var(--slot4-muted-text)] hover:text-[var(--slot4-dark-bg)]'}`}
+              >
                 {item.name}
               </Link>
             ))}
@@ -252,86 +285,85 @@ function EditorialArchive({
         </section>
 
         {lead ? (
-          <section className="mx-auto grid max-w-[1120px] gap-5 px-4 py-8 sm:px-6 lg:grid-cols-[1.65fr_0.8fr] lg:px-8">
-            <Link href={`${basePath}/${lead.slug}`} className="group relative min-h-[34rem] overflow-hidden rounded-lg bg-slate-950 shadow-[0_24px_70px_rgba(16,24,40,.16)]">
-              <img src={getImage(lead)} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-9">
-                <span className="rounded-md bg-[var(--slot4-accent)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em]">{getCategory(lead, label)}</span>
-                <h2 className="mt-5 max-w-4xl text-4xl font-black leading-[1] sm:text-6xl">{lead.title}</h2>
-                <p className="mt-5 max-w-2xl line-clamp-2 text-sm font-semibold leading-7 text-white/80">{getSummary(lead)}</p>
-                <div className="mt-6 flex flex-wrap gap-2 text-xs font-black">
-                  <span className="rounded-md bg-white/15 px-3 py-2">Campaign reach 88K</span>
-                  <span className="rounded-md bg-white/15 px-3 py-2">Publisher pickups 27</span>
-                  <span className="rounded-md bg-white/15 px-3 py-2">Status live</span>
+          <section className="mx-auto max-w-[1160px] px-4 py-8 sm:px-6 lg:px-8">
+            <Reveal>
+              <Link
+                href={`${basePath}/${lead.slug}`}
+                className="group relative grid min-h-[26rem] overflow-hidden rounded-[2rem] border border-white/10 bg-[var(--slot4-dark-bg)] shadow-[0_30px_90px_rgba(13,23,46,0.28)] lg:grid-cols-2"
+              >
+                <div className="relative min-h-[16rem] overflow-hidden">
+                  <img src={getImage(lead)} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90 transition duration-700 group-hover:scale-[1.05]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--slot4-dark-bg)] via-transparent to-transparent lg:bg-gradient-to-r" />
                 </div>
-              </div>
-            </Link>
-            <div className="grid gap-5">
-              <div className="rounded-lg bg-[var(--slot4-accent)] p-6 text-white shadow-sm">
-                <p className="text-xs font-black uppercase tracking-[0.24em]">Top stories</p>
-                <p className="mt-3 text-3xl font-black leading-tight">Campaigns with strong media momentum.</p>
-              </div>
-              {secondary.map((post, index) => (
-                <Link key={post.id || post.slug} href={`${basePath}/${post.slug}`} className="group grid grid-cols-[7rem_1fr] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                  <img src={getImage(post)} alt="" className="h-full min-h-40 w-full object-cover transition group-hover:scale-105" />
-                  <div className="p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--slot4-accent)]">0{index + 1} / pickup watch</p>
-                    <h3 className="mt-3 text-xl font-black leading-tight">{post.title}</h3>
+                <div className="flex flex-col justify-center p-8 text-white sm:p-12">
+                  <span className="w-fit rounded-full bg-[image:var(--slot4-accent-grad)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]">{getCategory(lead, label)}</span>
+                  <h2 className="mt-5 text-3xl font-black leading-[1.05] tracking-[-0.03em] sm:text-5xl">{lead.title}</h2>
+
+                  <div className="mt-6 flex flex-wrap gap-2 text-xs font-bold">
+                    <span className="rounded-full bg-white/12 px-3 py-1.5">Reach 88K</span>
+                    <span className="rounded-full bg-white/12 px-3 py-1.5">Pickups 27</span>
+                    <span className="rounded-full bg-emerald-400/20 px-3 py-1.5 text-emerald-200">Live</span>
                   </div>
-                </Link>
-              ))}
-            </div>
+                  <span className="mt-7 inline-flex items-center gap-2 text-sm font-bold">Open campaign <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                </div>
+              </Link>
+            </Reveal>
           </section>
         ) : null}
 
-        <section className="mx-auto max-w-[1120px] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-5 border-b border-slate-200 pb-4">
-            <h2 className="text-4xl font-black sm:text-5xl">Campaign cards</h2>
-            <form action={basePath} className="flex rounded-md border border-slate-200 bg-white shadow-sm">
-              <select name="category" defaultValue={category} className="h-11 min-w-44 bg-transparent px-3 text-xs font-black uppercase outline-none">
+        <section className="mx-auto max-w-[1160px] px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--slot4-accent)]">All campaigns</p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.03em] text-[var(--slot4-dark-bg)] sm:text-4xl">Campaign cards</h2>
+            </div>
+            <form action={basePath} className="flex overflow-hidden rounded-full border border-[var(--editable-border)] bg-white shadow-sm">
+              <select name="category" defaultValue={category} className="h-11 min-w-44 bg-transparent px-4 text-xs font-bold uppercase outline-none">
                 <option value="all">All categories</option>
                 {categories.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
               </select>
-              <button className="h-11 rounded-r-md bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.14em] text-white">Filter</button>
+              <button className="h-11 bg-[var(--slot4-dark-bg)] px-5 text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[var(--slot4-accent-fill)]">Filter</button>
             </form>
           </div>
 
           {cardPosts.length ? (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {cardPosts.map((post, index) => (
-                <Link key={post.id || post.slug} href={`${basePath}/${post.slug}`} className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                  <div className="aspect-[16/10] overflow-hidden bg-black">
-                    <img src={getImage(post)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center justify-between gap-4 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--slot4-accent)]">
-                      <span>{getCategory(post, label)}</span><span>Campaign {String(index + 1).padStart(2, '0')}</span>
+                <Reveal key={post.id || post.slug} delay={(index % 3) * 80}>
+                  <Link
+                    href={`${basePath}/${post.slug}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--editable-border)] bg-white shadow-[0_14px_36px_rgba(13,23,46,0.05)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_26px_60px_rgba(13,23,46,0.12)]"
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden bg-[var(--slot4-media-bg)]">
+                      <img src={getImage(post)} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                      <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--slot4-dark-bg)] backdrop-blur">{getCategory(post, label)}</span>
                     </div>
-                    <h3 className="mt-4 text-2xl font-black leading-[1.05]">{post.title}</h3>
-                    <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">{getSummary(post)}</p>
-                    <div className="mt-5 grid grid-cols-3 gap-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-600">
-                      <span className="rounded-md bg-slate-50 px-2 py-2">Reach {24 + index * 7}K</span>
-                      <span className="rounded-md bg-slate-50 px-2 py-2">{9 + index} outlets</span>
-                      <span className="rounded-md bg-emerald-50 px-2 py-2 text-emerald-700">Active</span>
+                    <div className="flex flex-1 flex-col p-6">
+                      <h3 className="text-xl font-black leading-snug tracking-[-0.02em] text-[var(--slot4-dark-bg)] transition group-hover:text-[var(--slot4-accent)]">{post.title}</h3>
+                    
+                      <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-bold">
+                        <span className="rounded-full bg-[var(--slot4-cream)] px-3 py-1.5 text-[var(--slot4-muted-text)]">Reach {24 + index * 7}K</span>
+                        <span className="rounded-full bg-[var(--slot4-cream)] px-3 py-1.5 text-[var(--slot4-muted-text)]">{9 + index} outlets</span>
+                        <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">Active</span>
+                      </div>
+                      <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-bold text-[var(--slot4-dark-bg)]">Open campaign <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
                     </div>
-                    <span className="mt-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-950">Open campaign <ArrowRight className="h-4 w-4" /></span>
-                  </div>
-                </Link>
+                  </Link>
+                </Reveal>
               ))}
             </div>
           ) : !lead ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
-              <Search className="mx-auto h-8 w-8" />
-              <h2 className="mt-4 text-3xl font-black">No campaigns found</h2>
-              <p className="mt-2 text-sm text-slate-600">Try another category or publish a new media distribution.</p>
+            <div className="rounded-3xl border border-dashed border-[var(--editable-border)] bg-white p-12 text-center">
+              <Search className="mx-auto h-8 w-8 text-[var(--slot4-accent)]" />
+              <h2 className="mt-4 text-2xl font-black text-[var(--slot4-dark-bg)]">No campaigns found</h2>
+              <p className="mt-2 text-sm text-[var(--slot4-muted-text)]">Try another category or publish a new media distribution.</p>
             </div>
           ) : null}
 
-          <div className="mt-10 flex items-center justify-center gap-0">
-            {pagination.hasPrevPage ? <Link href={pageHref(basePath, category, page - 1)} className="rounded-l-md border border-slate-200 bg-white px-5 py-3 text-xs font-black uppercase">Previous</Link> : null}
-            <span className="border-y border-slate-200 bg-[var(--slot4-accent)] px-5 py-3 text-xs font-black uppercase text-white">Page {page} / {pagination.totalPages || 1}</span>
-            {pagination.hasNextPage ? <Link href={pageHref(basePath, category, page + 1)} className="rounded-r-md border border-slate-200 bg-white px-5 py-3 text-xs font-black uppercase">Next</Link> : null}
+          <div className="mt-12 flex items-center justify-center gap-3">
+            {pagination.hasPrevPage ? <Link href={pageHref(basePath, category, page - 1)} className="rounded-full border border-[var(--editable-border)] bg-white px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] transition hover:-translate-y-0.5">Previous</Link> : null}
+            <span className="rounded-full bg-[image:var(--slot4-accent-grad)] px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white">Page {page} / {pagination.totalPages || 1}</span>
+            {pagination.hasNextPage ? <Link href={pageHref(basePath, category, page + 1)} className="rounded-full border border-[var(--editable-border)] bg-white px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] transition hover:-translate-y-0.5">Next</Link> : null}
           </div>
         </section>
       </main>
