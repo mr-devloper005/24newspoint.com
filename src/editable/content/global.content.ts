@@ -3,45 +3,48 @@ import { slot4BrandConfig } from '@/editable/theme/brand.config'
 export const globalContent = {
   site: {
     name: slot4BrandConfig.siteName,
-    tagline: slot4BrandConfig.tagline || 'Independent reading platform',
+    tagline: slot4BrandConfig.tagline || 'Media distribution platform',
     domain: slot4BrandConfig.domain,
     baseUrl: slot4BrandConfig.baseUrl,
   },
   nav: {
-    tagline: 'News, media, and public updates',
+    tagline: 'Press releases, news media, and public updates',
     primaryLinks: [
-      { label: 'Latest Updates', href: '/updates' },
-      { label: 'News Media', href: '/updates?category=news-media' },
-      { label: 'Press Releases', href: '/updates?category=press-release' },
+      { label: 'Home', href: '/' },
+      { label: 'Distributions', href: '/media-distribution' },
+      { label: 'About', href: '/about' },
       { label: 'Contact', href: '/contact' },
     ],
     actions: {
-      primary: { label: 'Browse updates', href: '/updates' },
-      secondary: { label: 'Submit', href: '/contact' },
+      primary: { label: 'Get started', href: '/signup' },
+      secondary: { label: 'View distributions', href: '/media-distribution' },
     },
   },
   footer: {
     tagline: 'Newsroom updates and distributed media',
-    description: 'A flexible media distribution surface for announcements, press coverage, public updates, and dynamic news categories.',
+    description: 'Transform your media strategy with intelligent press release distribution and powerful brand storytelling. Connect with publishers, track your reach, and amplify your message across the digital landscape.',
+    contactEmail: 'Contact',
     columns: [
       {
-        title: 'Explore',
+        title: 'Platform',
         links: [
-          { label: 'Latest Updates', href: '/updates' },
-          { label: 'News Media', href: '/updates?category=news-media' },
-          { label: 'Business News', href: '/updates?category=business' },
-          { label: 'Press Releases', href: '/updates?category=press-release' },
+          { label: 'Home', href: '/' },
+          { label: 'Distributions', href: '/media-distribution' },
+          { label: 'Create campaign', href: '/create' },
+          { label: 'Search', href: '/search' },
         ],
       },
       {
-        title: 'Site',
+        title: 'Company',
         links: [
           { label: 'About', href: '/about' },
           { label: 'Contact', href: '/contact' },
+          { label: 'Login', href: '/login' },
+          { label: 'Sign up', href: '/signup' },
         ],
       },
     ],
-    bottomNote: 'Built for fast, flexible, and category-led media distribution.',
+    bottomNote: 'Built for fast, flexible, category-led media distribution.',
   },
   commonLabels: {
     readMore: 'Read more',

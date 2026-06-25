@@ -1,45 +1,80 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/site-config'
 import { globalContent } from '@/editable/content/global.content'
-import { useEditableLocalAuthSession } from '@/editable/components/EditableLocalAuthForms'
+import { slot4BrandConfig } from '@/editable/theme/brand.config'
+import { Reveal } from '@/editable/components/Motion'
+
+const socials: { Icon: any; href: string; label: string }[] = []
+  
+  
 
 export function EditableFooter() {
   const year = new Date().getFullYear()
-  const { session, logout } = useEditableLocalAuthSession()
 
   return (
-    <footer className="border-t border-slate-800 bg-slate-950 text-white">
-      <div className="mx-auto max-w-[1120px] px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1.2fr_.7fr_.7fr]">
+    <footer className="px-3 pb-4 pt-10 sm:px-5">
+      <Reveal className="mx-auto max-w-[1160px] overflow-hidden rounded-[2rem] border border-[var(--editable-border)] bg-white shadow-[0_24px_70px_rgba(13,23,46,0.1)]">
+        <div className="grid gap-12 p-8 sm:p-12 lg:grid-cols-[1.4fr_0.8fr_0.8fr] lg:p-16">
           <div>
-            <Link href="/" className="text-3xl font-black text-white sm:text-4xl">{SITE_CONFIG.name}</Link>
-            <p className="mt-6 max-w-xl text-sm leading-7 text-white/62">{globalContent.footer?.description || SITE_CONFIG.description}</p>
-            <form action="/signup" className="mt-8 flex max-w-xl rounded-md border border-white/15 bg-white/5">
-              <input name="email" type="email" placeholder="Work email for campaign access" className="min-w-0 flex-1 bg-transparent px-4 py-4 text-sm outline-none placeholder:text-white/40" />
-              <button className="rounded-r-md bg-[var(--slot4-accent)] px-5 text-xs font-black uppercase tracking-[.14em]">Start</button>
-            </form>
+            <Link href="/" className="flex items-center gap-2.5">
+              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[var(--slot4-dark-bg)]">
+                <img src="/favicon.png?v=20260413" alt={slot4BrandConfig.siteName} className="h-7 w-7 object-contain" />
+              </span>
+              <span className="text-xl font-black tracking-tight text-[var(--slot4-dark-bg)]">{SITE_CONFIG.name}</span>
+            </Link>
+            <p className="mt-5 max-w-md text-sm leading-7 text-[var(--slot4-muted-text)]">
+              {globalContent.footer?.description || SITE_CONFIG.description}
+            </p>
+            <Link
+              href="/contact"
+              className="mt-7 inline-flex items-center gap-2 rounded-full bg-[var(--slot4-dark-bg)] py-3 pl-6 pr-3 text-sm font-bold text-white transition hover:bg-[var(--slot4-accent-fill)]"
+            >
+              {globalContent.footer?.contactEmail || 'press@yourbrand.com'}
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
           </div>
-          <div>
-            <h3 className="border-b border-white/25 pb-3 text-[10px] font-black uppercase tracking-[.22em] text-white/55">Explore</h3>
-            <div className="mt-4 grid gap-3">
-              <Link href="/media-distribution" className="group inline-flex items-center justify-between text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Distributions<ArrowRight className="h-4 w-4" /></Link>
-              <Link href="/search" className="group inline-flex items-center justify-between text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Search<ArrowRight className="h-4 w-4" /></Link>
+
+          {globalContent.footer.columns.map((column) => (
+            <div key={column.title}>
+              <h3 className="text-base font-black text-[var(--slot4-dark-bg)]">{column.title}</h3>
+              <div className="mt-5 grid gap-3">
+                {column.links.map((link) => (
+                  <Link
+                    key={`${link.label}-${link.href}`}
+                    href={link.href}
+                    className="nav-underline w-fit text-sm font-semibold text-[var(--slot4-muted-text)] transition hover:text-[var(--slot4-accent)]"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <h3 className="border-b border-white/25 pb-3 text-[10px] font-black uppercase tracking-[.22em] text-white/55">Platform</h3>
-            <div className="mt-4 grid gap-3">
-              <Link href="/about" className="text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">About</Link>
-              <Link href="/contact" className="text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Contact</Link>
-              {session ? <><Link href="/create" className="text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Create campaign</Link><button onClick={logout} className="text-left text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Logout</button></> : <><Link href="/login" className="text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Log in</Link><Link href="/signup" className="text-sm font-black uppercase tracking-[.08em] hover:text-[var(--slot4-accent)]">Sign up</Link></>}
-            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[var(--editable-border)] px-8 py-6 sm:flex-row sm:px-12 lg:px-16">
+          <p className="text-xs font-semibold text-[var(--slot4-soft-muted-text)]">
+            © {year} {SITE_CONFIG.name}. {globalContent.footer?.bottomNote || 'Media distribution and press visibility.'}
+          </p>
+          <div className="flex items-center gap-2.5">
+            {socials.map(({ Icon, href, label }) => (
+              <Link
+                key={label}
+                href={href}
+                aria-label={label}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--editable-border)] text-[var(--slot4-muted-text)] transition hover:-translate-y-0.5 hover:border-[var(--slot4-accent)] hover:bg-[var(--slot4-accent)] hover:text-white"
+              >
+                <Icon className="h-4 w-4" />
+              </Link>
+            ))}
           </div>
         </div>
-      </div>
-      <div className="border-t border-white/10 px-4 py-5 text-center text-[10px] font-black uppercase tracking-[.18em] text-white/45">(c) {year} {SITE_CONFIG.name}. Media distribution and press release visibility.</div>
+      </Reveal>
     </footer>
   )
 }

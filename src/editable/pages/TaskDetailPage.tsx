@@ -8,6 +8,7 @@ import { getTaskConfig, SITE_CONFIG, type TaskKey } from '@/lib/site-config'
 import type { SitePost } from '@/lib/site-connector'
 import { EditableSiteShell } from '@/editable/shell/EditableSiteShell'
 import { getVisualPreset, visualSystem } from '@/editable/theme/visual-system'
+import { ReadingProgress, Reveal } from '@/editable/components/Motion'
 
 export const revalidate = 3
 
@@ -139,7 +140,7 @@ export function TaskDetailView({ task, post, related, comments = [] }: { task: T
 function BackLink({ task }: { task: TaskKey }) {
   const taskConfig = getTaskConfig(task)
   return (
-    <Link href={taskConfig?.route || '/'} className="inline-flex items-center gap-2 border-b-2 border-current pb-1 text-xs font-black uppercase tracking-[0.16em]">
+    <Link href={taskConfig?.route || '/'} className="inline-flex items-center gap-2 rounded-full border border-current/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition hover:-translate-y-0.5">
       <ArrowLeft className="h-4 w-4" /> Back to {taskConfig?.label || 'posts'}
     </Link>
   )
@@ -154,71 +155,62 @@ function MediaCampaignDetail({ post, related, comments }: { post: SitePost; rela
   const body = getBody(post)
 
   return (
-    <section className="bg-[var(--slot4-page-bg)]">
-      <header className="bg-slate-950 text-white">
-        <div className="mx-auto grid max-w-[1120px] gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-16">
-          <div className="self-center">
-            <BackLink task="mediaDistribution" />
-            <div className="mt-8 flex flex-wrap gap-2">
-              <span className="rounded-md bg-[var(--slot4-accent)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em]">{category}</span>
-              <span className="rounded-md bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em]">Campaign active</span>
+    <section className="relative overflow-hidden">
+      <ReadingProgress />
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(55%_60%_at_50%_0%,rgba(91,99,245,0.14),transparent_70%)]" />
+
+      <header className="mx-auto max-w-[1160px] px-4 pt-12 sm:px-6 lg:px-8 lg:pt-16">
+        <Reveal>
+          <div className="grid gap-8 overflow-hidden rounded-[2rem] border border-white/10 bg-[var(--slot4-dark-bg)] p-8 text-white shadow-[0_30px_90px_rgba(13,23,46,0.3)] sm:p-10 lg:grid-cols-[1.05fr_.95fr] lg:p-12">
+            <div className="self-center">
+              <BackLink task="mediaDistribution" />
+              <div className="mt-7 flex flex-wrap gap-2">
+                <span className="rounded-full bg-[image:var(--slot4-accent-grad)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]">{category}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Campaign active</span>
+              </div>
+              <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-6xl">{post.title}</h1>
+              <div className="mt-8 flex flex-wrap gap-3">
+                {website ? <Link href={website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-[var(--slot4-dark-bg)] transition hover:-translate-y-0.5">Publisher source <ExternalLink className="h-4 w-4" /></Link> : null}
+                <Link href="/create" className="inline-flex items-center gap-2 rounded-full bg-[image:var(--slot4-accent-grad)] px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5">Launch similar <RadioTower className="h-4 w-4" /></Link>
+                <Link href="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white hover:text-[var(--slot4-dark-bg)]">PR support <Mail className="h-4 w-4" /></Link>
+              </div>
             </div>
-            <h1 className="mt-6 max-w-4xl text-5xl font-black leading-[1] sm:text-6xl lg:text-7xl">{post.title}</h1>
-           
-            <div className="mt-8 flex flex-wrap gap-3">
-              {website ? <Link href={website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-slate-950">Publisher source <ExternalLink className="h-4 w-4" /></Link> : null}
-              <Link href="/create" className="inline-flex items-center gap-2 rounded-md bg-[var(--slot4-accent)] px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white">Launch similar <RadioTower className="h-4 w-4" /></Link>
-              <Link href="/contact" className="inline-flex items-center gap-2 rounded-md border border-white/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white">PR support <Mail className="h-4 w-4" /></Link>
+            <div className="relative min-h-[300px] overflow-hidden rounded-[1.5rem] bg-[var(--slot4-dark-soft)]">
+              {images[0] ? <img src={images[0]} alt="" className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 bg-[image:var(--slot4-accent-grad)] opacity-40" />}
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--slot4-dark-bg)]/85 via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 grid grid-cols-3 gap-2 p-4 text-xs font-bold">
+                <span className="rounded-2xl bg-white/92 p-3 text-[var(--slot4-dark-bg)]">Reach<br /><b className="text-xl">92K</b></span>
+                <span className="rounded-2xl bg-white/92 p-3 text-[var(--slot4-dark-bg)]">Outlets<br /><b className="text-xl">31</b></span>
+                <span className="rounded-2xl bg-white/92 p-3 text-[var(--slot4-dark-bg)]">Shares<br /><b className="text-xl">1.8K</b></span>
+              </div>
             </div>
           </div>
-          <div className="relative min-h-[360px] overflow-hidden rounded-lg bg-slate-800 shadow-[0_24px_80px_rgba(0,0,0,.25)]">
-            {images[0] ? <img src={images[0]} alt="" className="absolute inset-0 h-full w-full object-cover" /> : null}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 grid grid-cols-3 gap-2 p-4 text-xs font-black">
-              <span className="rounded-md bg-white/90 p-3 text-slate-950">Reach<br /><b className="text-xl">92K</b></span>
-              <span className="rounded-md bg-white/90 p-3 text-slate-950">Outlets<br /><b className="text-xl">31</b></span>
-              <span className="rounded-md bg-white/90 p-3 text-slate-950">Shares<br /><b className="text-xl">1.8K</b></span>
-            </div>
-          </div>
-        </div>
+        </Reveal>
       </header>
 
-      <div className="mx-auto grid max-w-[1120px] gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,760px)_340px] lg:px-8 lg:py-14">
-        <article className="min-w-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
-          <div className="mb-8 grid gap-3 sm:grid-cols-3">
-            {[
-              { label: 'Distribution', value: 'Newswire ready', Icon: RadioTower },
-              { label: 'Audience', value: 'Journalists + publishers', Icon: Target },
-              { label: 'Verification', value: 'Brand profile attached', Icon: CheckCircle2 },
-            ].map(({ label, value, Icon }) => (
-              <div key={label} className="rounded-lg bg-slate-50 p-4">
-                <Icon className="h-5 w-5 text-[var(--slot4-accent)]" />
-                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-                <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
-              </div>
-            ))}
-          </div>
+      <div className="mx-auto grid max-w-[1160px] gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,760px)_340px] lg:px-8 lg:py-16">
+        <Reveal as="article" className="min-w-0 rounded-[2rem] border border-[var(--editable-border)] bg-white p-6 shadow-[0_18px_50px_rgba(13,23,46,0.08)] sm:p-10">
           <div className="article-content max-w-none" dangerouslySetInnerHTML={{ __html: formatPlainText(body) }} />
           <EditableComments slug={post.slug} comments={comments} />
-        </article>
+        </Reveal>
 
         <aside className="min-w-0 max-w-full space-y-5 overflow-hidden">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--slot4-accent)]">Brand profile</p>
-            <h2 className="mt-3 text-2xl font-black">{brand}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">Publisher information, campaign context, and source links are grouped here so media readers can verify the release quickly.</p>
+          <Reveal className="rounded-3xl border border-[var(--editable-border)] bg-white p-6 shadow-[0_14px_36px_rgba(13,23,46,0.06)]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--slot4-accent)]">Brand profile</p>
+            <h2 className="mt-3 text-2xl font-black text-[var(--slot4-dark-bg)]">{brand}</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--slot4-muted-text)]">Publisher information, campaign context, and source links are grouped here so media readers can verify the release quickly.</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              {website ? <Link href={website} target="_blank" rel="noreferrer" className="rounded-md bg-slate-950 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white">Visit source</Link> : null}
-              {email ? <a href={`mailto:${email}`} className="rounded-md border border-slate-200 px-4 py-2 text-xs font-black uppercase tracking-[0.12em]">Email</a> : null}
+              {website ? <Link href={website} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--slot4-dark-bg)] px-4 py-2 text-xs font-bold text-white transition hover:bg-[var(--slot4-accent-fill)]">Visit source</Link> : null}
+              {email ? <a href={`mailto:${email}`} className="rounded-full border border-[var(--editable-border)] px-4 py-2 text-xs font-bold text-[var(--slot4-dark-bg)] transition hover:border-[var(--slot4-accent)]">Email</a> : null}
             </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Share tools</p>
+          </Reveal>
+          <Reveal delay={80} className="rounded-3xl border border-[var(--editable-border)] bg-white p-6 shadow-[0_14px_36px_rgba(13,23,46,0.06)]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--slot4-soft-muted-text)]">Share tools</p>
             <div className="mt-4 grid gap-2">
-              <a href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(SITE_CONFIG.baseUrl)}`} className="inline-flex items-center gap-2 rounded-md bg-slate-50 px-4 py-3 text-sm font-black"><Mail className="h-4 w-4 text-[var(--slot4-accent)]" /> Email campaign</a>
-              <Link href="/search" className="inline-flex items-center gap-2 rounded-md bg-slate-50 px-4 py-3 text-sm font-black"><Share2 className="h-4 w-4 text-[var(--slot4-accent)]" /> Discover related coverage</Link>
+              <a href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(SITE_CONFIG.baseUrl)}`} className="inline-flex items-center gap-2 rounded-2xl bg-[var(--slot4-cream)] px-4 py-3 text-sm font-bold text-[var(--slot4-dark-bg)] transition hover:bg-[var(--slot4-accent-soft)]"><Mail className="h-4 w-4 text-[var(--slot4-accent)]" /> Email campaign</a>
+              <Link href="/search" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--slot4-cream)] px-4 py-3 text-sm font-bold text-[var(--slot4-dark-bg)] transition hover:bg-[var(--slot4-accent-soft)]"><Share2 className="h-4 w-4 text-[var(--slot4-accent)]" /> Discover related coverage</Link>
             </div>
-          </div>
+          </Reveal>
           <RelatedPanel task="mediaDistribution" post={post} related={related} compact />
         </aside>
       </div>
@@ -495,22 +487,21 @@ function RelatedPanel({ task, post, related, compact = false }: { task: TaskKey;
   return (
     <aside className="w-full min-w-0 max-w-full space-y-5 overflow-hidden">
       {!compact ? (
-        <div className="w-full max-w-full overflow-hidden border-b border-black/20 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-[0.22em] opacity-55">About this post</p>
-          <div className="mt-4 grid gap-3 text-sm font-bold opacity-75">
-            <p className="inline-flex items-center gap-2"><Tag className="h-4 w-4" /> Task: {taskConfig?.label || task}</p>
-            <p className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Site: {SITE_CONFIG.name}</p>
-            {post.publishedAt ? <p>Published: {new Date(post.publishedAt).toLocaleDateString()}</p> : null}
+        <div className="w-full max-w-full overflow-hidden rounded-3xl border border-[var(--editable-border)] bg-white p-5 shadow-[0_14px_36px_rgba(13,23,46,0.06)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--slot4-soft-muted-text)]">About this post</p>
+          <div className="mt-4 grid gap-3 text-sm font-semibold text-[var(--slot4-muted-text)]">
+            <p className="inline-flex items-center gap-2"><Tag className="h-4 w-4 text-[var(--slot4-accent)]" /> Task: {taskConfig?.label || task}</p>
+            <p className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--slot4-accent)]" /> Site: {SITE_CONFIG.name}</p>
           </div>
         </div>
       ) : null}
       {related.length ? (
-        <div className="w-full max-w-full overflow-hidden border-b border-black/20 bg-white p-5">
+        <div className="w-full max-w-full overflow-hidden rounded-3xl border border-[var(--editable-border)] bg-white p-5 shadow-[0_14px_36px_rgba(13,23,46,0.06)]">
           <div className="flex min-w-0 items-center justify-between gap-3">
-            <h2 className="min-w-0 truncate text-lg font-black tracking-[-0.04em]">{heading}</h2>
-            <Link href={taskConfig?.route || '/'} className="shrink-0 text-xs font-black uppercase tracking-[0.16em] opacity-55">View all</Link>
+            <h2 className="min-w-0 truncate text-lg font-black tracking-[-0.02em] text-[var(--slot4-dark-bg)]">{heading}</h2>
+            <Link href={taskConfig?.route || '/'} className="shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-[var(--slot4-accent)]">View all</Link>
           </div>
-          <div className="mt-5 grid w-full max-w-full gap-3 overflow-hidden">
+          <div className="mt-4 grid w-full max-w-full gap-2 overflow-hidden">
             {related.map((item) => <RelatedCard key={item.id || item.slug} task={task} post={item} />)}
           </div>
         </div>
@@ -520,15 +511,14 @@ function RelatedPanel({ task, post, related, compact = false }: { task: TaskKey;
 }
 
 function RelatedCard({ task, post }: { task: TaskKey; post: SitePost }) {
-  const image = getImages(post)[0]
   const title = stripHtmlText(post.title)
   const summary = summaryText(post)
   return (
-    <Link href={buildPostUrl(task, post.slug)} className="group grid w-full min-w-0 max-w-full grid-cols-[64px_minmax(0,1fr)] gap-3 overflow-hidden border-t border-black/15 py-3 transition hover:text-[#c92f2f]">
-      {image && task !== 'sbm' ? <img src={image} alt="" className="h-16 w-16 shrink-0 object-cover" /> : <div className="flex h-16 w-16 shrink-0 items-center justify-center bg-black text-white"><FileText className="h-6 w-6" /></div>}
+    <Link href={buildPostUrl(task, post.slug)} className="group grid w-full min-w-0 max-w-full grid-cols-[40px_minmax(0,1fr)] gap-3 overflow-hidden rounded-2xl p-2.5 transition hover:bg-[var(--slot4-cream)]">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--slot4-accent-soft)] text-[var(--slot4-accent)]"><FileText className="h-5 w-5" /></span>
       <div className="min-w-0 max-w-full overflow-hidden">
-        <h3 className="line-clamp-2 min-w-0 max-w-full whitespace-normal break-words text-sm font-black leading-tight tracking-[-0.03em] [overflow-wrap:anywhere]">{title}</h3>
-        {summary ? <p className="mt-2 line-clamp-2 min-w-0 max-w-full whitespace-normal break-words text-xs leading-5 opacity-60 [overflow-wrap:anywhere]">{summary}</p> : null}
+        <h3 className="line-clamp-2 min-w-0 max-w-full whitespace-normal break-words text-sm font-bold leading-tight tracking-[-0.01em] text-[var(--slot4-dark-bg)] transition group-hover:text-[var(--slot4-accent)] [overflow-wrap:anywhere]">{title}</h3>
+        {summary ? <p className="mt-1 line-clamp-1 min-w-0 max-w-full whitespace-normal break-words text-xs leading-5 text-[var(--slot4-soft-muted-text)] [overflow-wrap:anywhere]">{summary}</p> : null}
       </div>
     </Link>
   )
@@ -536,16 +526,16 @@ function RelatedCard({ task, post }: { task: TaskKey; post: SitePost }) {
 
 function EditableComments({ slug, comments }: { slug: string; comments: Array<{ id: string; name: string; comment: string; createdAt: string }> }) {
   return (
-    <section className="mt-12 border-t-4 border-black bg-white p-5">
-      <div className="flex items-center gap-2 text-lg font-black"><MessageCircle className="h-5 w-5" /> Comments</div>
-      <div className="mt-5 grid gap-3">
+    <section className="mt-12 rounded-3xl border border-[var(--editable-border)] bg-[var(--slot4-cream)] p-6">
+      <div className="flex items-center gap-2 text-lg font-black text-[var(--slot4-dark-bg)]"><MessageCircle className="h-5 w-5 text-[var(--slot4-accent)]" /> Comments</div>
+      <div className="mt-4 grid gap-3">
         {comments.slice(0, 5).map((comment) => (
-          <div key={comment.id} className="border-t border-black/15 py-4">
-            <p className="text-sm font-black">{comment.name}</p>
-            <p className="mt-2 text-sm leading-6 opacity-70">{comment.comment}</p>
+          <div key={comment.id} className="rounded-2xl border border-[var(--editable-border)] bg-white p-4">
+            <p className="text-sm font-black text-[var(--slot4-dark-bg)]">{comment.name}</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--slot4-muted-text)]">{comment.comment}</p>
           </div>
         ))}
-        {!comments.length ? <p className="text-sm opacity-60">No comments yet for {slug}.</p> : null}
+        {!comments.length ? <p className="text-sm text-[var(--slot4-soft-muted-text)]">No comments yet for {slug}.</p> : null}
       </div>
     </section>
   )
